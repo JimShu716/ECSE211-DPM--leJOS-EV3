@@ -11,19 +11,18 @@ public class WallFollowingLab {
 
   // Parameters: adjust these for desired performance
 
-  private static final int bandCenter = 35; // Offset from the wall (cm)
-  private static final int bandWidth = 2; // Width of dead band (cm)
-  private static final int motorLowInward = 100; // Speed of slower rotating wheel (deg/sec)
-  private static final int motorHighInward = 300; // Speed of the faster rotating wheel (deg/seec)
-  private static final int motorLowOutward = 100;
-  private static final int motorHighOutward = 200;
+  private static final int bandCenter = 30; // Offset from the wall (cm)
+  private static final int bandWidth = 3; // Width of dead band (cm)
+  private static final int motorLow = 100; // Speed of slower rotating wheel (deg/sec)
+  private static final int motorHigh = 200; // Speed of the faster rotating wheel (deg/seec)
+
 
 
   private static final Port usPort = LocalEV3.get().getPort("S1");
   public static final EV3LargeRegulatedMotor leftMotor =
       new EV3LargeRegulatedMotor(LocalEV3.get().getPort("A"));
   public static final EV3LargeRegulatedMotor rightMotor =
-      new EV3LargeRegulatedMotor(LocalEV3.get().getPort("B"));
+      new EV3LargeRegulatedMotor(LocalEV3.get().getPort("D"));
 
   // Main entry point - instantiate objects used and set up sensor
 
@@ -37,7 +36,7 @@ public class WallFollowingLab {
     // Setup controller objects
 
     BangBangController bangbangController =
-        new BangBangController(bandCenter, bandWidth, motorLowInward,motorHighInward, motorHighOutward,motorLowOutward);
+        new BangBangController(bandCenter, bandWidth, motorLow,motorHigh);
 
     PController pController = new PController(bandCenter, bandWidth);
 
