@@ -168,7 +168,7 @@ else if (Math.abs(distError)>bandWidth&&distError<1) {
 
 	if(distError>=-13&&distError< 0) {//too close to the wall
 
-		WallFollowingLab.rightMotor.setSpeed(0); // when the robot comes too close, it will turn away
+		WallFollowingLab.rightMotor.setSpeed(0); // when the robot comes closer to the wall, it will turn away
 
         WallFollowingLab.leftMotor.setSpeed(MOTOR_SPEED-(int)(gained_Error/1.5));//reduce the turning speed so it won't turn too much
 
@@ -178,7 +178,7 @@ else if (Math.abs(distError)>bandWidth&&distError<1) {
 
 	}else if(distError <-13){
 		WallFollowingLab.rightMotor.setSpeed(MOTOR_SPEED+(int)(gained_Error)); // when the robot comes too close, it will go backwards to adjust.
-
+                                                                                     //we make the robot go backwards here as the sharp turn doesn't work well.
         WallFollowingLab.leftMotor.setSpeed(MOTOR_SPEED-(int)(gained_Error));
 
         WallFollowingLab.rightMotor.backward();
