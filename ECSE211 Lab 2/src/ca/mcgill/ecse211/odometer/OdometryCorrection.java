@@ -51,11 +51,7 @@ public class OdometryCorrection implements Runnable {
 		while (true) {
 
 			correctionStart = System.currentTimeMillis();
-
-			// TODO Trigger correction (When do I have information to correct?)
-			// TODO Calculate new (accurate) robot position
-			// TODO Update odometer with new calculated (and more accurate) values
-
+			
 			Color.fetchSample(sampleData, 0);
 			light_received= sampleData[0];
 
