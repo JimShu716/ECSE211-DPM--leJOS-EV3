@@ -9,8 +9,8 @@ import lejos.hardware.motor.EV3LargeRegulatedMotor;
  * This class is used to drive the robot on the demo floor.
  */
 public class SquareDriver {
-  private static final int FORWARD_SPEED = 250;
-  private static final int ROTATE_SPEED = 150;
+  private static final int FORWARD_SPEED = 200;
+  private static final int ROTATE_SPEED = 130;
   private static final double TILE_SIZE = 30.48;
 
   /**
@@ -40,11 +40,11 @@ public class SquareDriver {
 
     for (int i = 0; i < 4; i++) {
       // drive forward two tiles
-      leftMotor.setSpeed(FORWARD_SPEED+2);
+      leftMotor.setSpeed(FORWARD_SPEED-2);
       rightMotor.setSpeed(FORWARD_SPEED);
 
-      leftMotor.rotate(convertDistance(leftRadius, 2 * TILE_SIZE), true);
-      rightMotor.rotate(convertDistance(rightRadius, 2 * TILE_SIZE), false);
+      leftMotor.rotate(convertDistance(leftRadius, 2.9 * TILE_SIZE), true);
+      rightMotor.rotate(convertDistance(rightRadius, 2.9 * TILE_SIZE), false);
 
       // turn 90 degrees clockwise
       leftMotor.setSpeed(ROTATE_SPEED);

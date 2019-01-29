@@ -41,7 +41,7 @@ public class Odometer extends OdometerData implements Runnable {
  
  private double deltaDistance;
  private double deltaAngle;
- private double T,X,Y;
+ private double T =0 ,X =0 ,Y=0;
  private double deltaT,deltaX,deltaY;
 
 
