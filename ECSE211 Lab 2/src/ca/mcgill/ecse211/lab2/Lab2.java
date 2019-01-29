@@ -1,6 +1,5 @@
 // Lab2.java
 package ca.mcgill.ecse211.lab2;
-
 import ca.mcgill.ecse211.odometer.*;
 import lejos.hardware.Button;
 import lejos.hardware.ev3.LocalEV3;
@@ -16,7 +15,7 @@ public class Lab2 {
       new EV3LargeRegulatedMotor(LocalEV3.get().getPort("B"));
   private static final TextLCD lcd = LocalEV3.get().getTextLCD();
   public static final double WHEEL_RAD = 2.1;
-  public static final double TRACK = 10.73;
+  public static final double TRACK = 12.12;
 
   public static void main(String[] args) throws OdometerExceptions {
 

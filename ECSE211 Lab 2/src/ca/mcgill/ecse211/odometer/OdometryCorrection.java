@@ -16,6 +16,9 @@ import lejos.robotics.SampleProvider;
 
 import lejos.hardware.Sound;
 
+import java.util.*; 
+
+
 public class OdometryCorrection implements Runnable {
 
 	private static final long CORRECTION_PERIOD = 10;
@@ -40,6 +43,8 @@ public class OdometryCorrection implements Runnable {
 	private float[] sampleData;
 
 	private SampleProvider Color;
+	
+	
 
 	/**
 	 * 
@@ -75,6 +80,38 @@ public class OdometryCorrection implements Runnable {
 	 */
 
 	// run method (required for Thread)
+	
+	
+	
+	private float filter() {// use a median filter to filter the sensor data
+		
+		float[] filterData = {};//use an array to store data
+		  
+		for (int i =0;i<7;i++) {
+	
+			Color.fetchSample(sampleData, 0);//obtain the data
+		
+			
+		
+		filterData[i] = sampleData[i];
+		 Arrays.sort(filterData); // place the data in order
+		 
+			
+			}
+	
+		if (sampleData[0]>filterData[3]) {//use the median to set an upper limit
+			
+			sampleData[0] = filterData[3];
+		}else {
+			
+			 sampleData[0]= sampleData[0];
+			
+			}
+		
+
+		return sampleData[0];
+		
+	}
 
 	public void run() {
 
@@ -88,7 +125,7 @@ public class OdometryCorrection implements Runnable {
 
 			Color.fetchSample(sampleData, 0);
 
-			light_received = sampleData[0];
+			light_received = filter(); // the filter is used for the more accurate sensor data
 
 			double[] xytData = odometer.getXYT(); // using get method from OdometerData
 
@@ -121,7 +158,7 @@ public class OdometryCorrection implements Runnable {
 
 					yLine_num--;// reduce the count before correction
 					deltaY = xytData[1] - (TILE_Size * yLine_num);
-					odometer.setY(xytData[1]-deltaY + 5);// use an offset to make the reading accurate.
+					odometer.setY(xytData[1]-deltaY );
 
 				}
 
@@ -132,6 +169,8 @@ public class OdometryCorrection implements Runnable {
 
 					deltaX = xytData[0] - (TILE_Size * xLine_num);
 					odometer.setX(xytData[0]- deltaX );
+					odometer.setY(xytData[1]-1.5);//use a offset to correct y
+				
 
 				}
 

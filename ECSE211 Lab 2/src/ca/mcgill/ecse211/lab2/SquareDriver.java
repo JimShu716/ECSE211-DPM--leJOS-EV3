@@ -10,7 +10,7 @@ import lejos.hardware.motor.EV3LargeRegulatedMotor;
  */
 public class SquareDriver {
   private static final int FORWARD_SPEED = 200;
-  private static final int ROTATE_SPEED = 130;
+  private static final int ROTATE_SPEED = 120;
   private static final double TILE_SIZE = 30.48;
 
   /**
@@ -40,8 +40,8 @@ public class SquareDriver {
 
     for (int i = 0; i < 4; i++) {
       // drive forward two tiles
-      leftMotor.setSpeed(FORWARD_SPEED-2);
-      rightMotor.setSpeed(FORWARD_SPEED);
+      leftMotor.setSpeed(FORWARD_SPEED-1);
+      rightMotor.setSpeed(FORWARD_SPEED-1);
 
       leftMotor.rotate(convertDistance(leftRadius, 2.9 * TILE_SIZE), true);
       rightMotor.rotate(convertDistance(rightRadius, 2.9 * TILE_SIZE), false);
