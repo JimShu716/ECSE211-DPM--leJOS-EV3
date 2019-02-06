@@ -1,3 +1,15 @@
+/**
+ * This class implements Runnable. It is used
+ *  to display the content of the odometer 
+ *  variables, i.e. X,Y and Theta, on the LCD
+ *  screen of the EV3 brick.
+ *  
+ *  @author1 Cristian Ciungu
+ *  @author2 Hao Shu
+ *  @version 05-02-2019
+ *  
+ */
+
 package ca.mcgill.ecse211.lab3;
 
 import java.text.DecimalFormat;
@@ -5,9 +17,6 @@ import ca.mcgill.ecse211.odometer.Odometer;
 import ca.mcgill.ecse211.odometer.OdometerExceptions;
 import lejos.hardware.lcd.TextLCD;
 
-/**
- * This class is used to display the content of the odometer variables (x, y, Theta)
- */
 public class Display implements Runnable {
 
   private Odometer odo;
@@ -17,10 +26,11 @@ public class Display implements Runnable {
   private long timeout = Long.MAX_VALUE;
 
   /**
-   * This is the class constructor
+   * This is the class constructor.
    * 
    * @param odoData
    * @throws OdometerExceptions 
+   * 
    */
   public Display(TextLCD lcd) throws OdometerExceptions {
     odo = Odometer.getOdometer();
@@ -32,6 +42,7 @@ public class Display implements Runnable {
    * 
    * @param odoData
    * @throws OdometerExceptions 
+   * 
    */
   public Display(TextLCD lcd, long timeout) throws OdometerExceptions {
     odo = Odometer.getOdometer();
@@ -39,6 +50,7 @@ public class Display implements Runnable {
     this.lcd = lcd;
   }
 
+  // run method (required to implement Runnable) 
   public void run() {
     
     lcd.clear();
@@ -57,6 +69,7 @@ public class Display implements Runnable {
       lcd.drawString("X: " + numberFormat.format(position[0]), 0, 0);
       lcd.drawString("Y: " + numberFormat.format(position[1]), 0, 1);
       lcd.drawString("T: " + numberFormat.format(position[2]), 0, 2);
+//      lcd.drawString("distance: " + Navigation_ObstacleAvoidance.dist, 0, 3);
       
       // this ensures that the data is updated only once every period
       updateEnd = System.currentTimeMillis();
