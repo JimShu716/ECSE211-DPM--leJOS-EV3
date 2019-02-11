@@ -62,7 +62,6 @@ public class UltrasonicLocalizer {
     }
 
 
-    // rotates counterclockwise until distance from wall is smaller than 40
     while (this.distance > THRESHOLD) {
       leftMotor.setSpeed(FORWARD_SPEED);
       rightMotor.setSpeed(FORWARD_SPEED);
@@ -71,7 +70,7 @@ public class UltrasonicLocalizer {
 
     }
 
-    alpha = odometer.getXYT()[2]; // record the value of the angle
+    alpha = odometer.getXYT()[2]; // record the first value of the angle
     Sound.beep(); // make a sound after recording the angle
 
     // rotates clockwise until distance is greater than THRESHOLD
@@ -82,14 +81,14 @@ public class UltrasonicLocalizer {
       rightMotor.backward();
     }
 
-    // rotates clockwise until distance small than 40
+ 
     while (this.distance > THRESHOLD) {
       leftMotor.setSpeed(FORWARD_SPEED);
       rightMotor.setSpeed(FORWARD_SPEED);
 
     }
 
-    beta = odometer.getXYT()[2]; // record angle reading
+    beta = odometer.getXYT()[2]; // record the second angle.
     Sound.beep();
 
     leftMotor.stop();
@@ -97,8 +96,7 @@ public class UltrasonicLocalizer {
 
     theta = calculateTheta(alpha, beta);
 
-    // turns to adjust position; results in robot positioned at
-    // angle = 0 degrees
+    // turns to adjust position; results in robot positioned at angle = 0 degrees
     leftMotor.rotate(-convertAngle(Lab4.WHEEL_RAD, Lab4.TRACK, theta), true);
     rightMotor.rotate(convertAngle(Lab4.WHEEL_RAD, Lab4.TRACK, theta), false);
     odometer.setTheta(0);// reset the odometer
@@ -114,7 +112,7 @@ public class UltrasonicLocalizer {
     distance = medianFilter();
 
 
-    // rotates counterclowise until distance smaller than 30
+    // rotates counterclowise 
     while (this.distance > MARGIN) {
       leftMotor.setSpeed(FORWARD_SPEED);
       rightMotor.setSpeed(FORWARD_SPEED);
@@ -123,7 +121,7 @@ public class UltrasonicLocalizer {
     }
 
 
-    // rotates counterclowise until distance greater than 40
+    // rotates counterclowise
     while (this.distance < THRESHOLD) {
       leftMotor.setSpeed(FORWARD_SPEED);
       rightMotor.setSpeed(FORWARD_SPEED);
@@ -136,7 +134,7 @@ public class UltrasonicLocalizer {
     alpha = odometer.getXYT()[2];// record the first angle
     Sound.beep();
 
-    // rotates clockwise until distance smaller than 30
+    // rotates clockwise 
     while (this.distance > MARGIN) {
       leftMotor.setSpeed(FORWARD_SPEED);
       rightMotor.setSpeed(FORWARD_SPEED);
@@ -147,7 +145,7 @@ public class UltrasonicLocalizer {
     leftMotor.stop();
     rightMotor.stop();
 
-    // rotates clockwise until distance greater than 40
+    // rotates clockwise
     while (this.distance < THRESHOLD) {
       leftMotor.setSpeed(FORWARD_SPEED);
       rightMotor.setSpeed(FORWARD_SPEED);
