@@ -1,172 +1,158 @@
 package ca.mcgill.ecse211.lab4;
 
-
-import lejos.hardware.ev3.LocalEV3;
-import lejos.hardware.motor.EV3LargeRegulatedMotor;
-import lejos.hardware.port.Port;
-import lejos.hardware.sensor.EV3UltrasonicSensor;
-import lejos.hardware.sensor.SensorModes;
-import lejos.robotics.SampleProvider;
-import java.util.Arrays;
-import ca.mcgill.ecse211.odometer.*;
 import lejos.hardware.Sound;
+import lejos.hardware.motor.EV3LargeRegulatedMotor;
+import lejos.robotics.SampleProvider;
+import ca.mcgill.ecse211.odometer.*;
+import java.util.Arrays;
+import ca.mcgill.ecse211.lab4.*;
 
 public class UltrasonicLocalizer {
 
-  private EV3LargeRegulatedMotor leftMotor, rightMotor;
+  // robot constants
+  public static int ROTATION_SPEED = 100;
 
   private Odometer odometer;
-  private SampleProvider usDistance;
   private float[] usData;
+  private EV3LargeRegulatedMotor leftMotor, rightMotor;
+  private SampleProvider usDistance;
 
-  private double distance;// the distance from the wall
+
+
+  private double THRESHOLD = 20.00;// the value of d
+  private double MARGIN = 2.00;// the value of k
   private double alpha, beta, theta;
-
-  public static final double THRESHOLD = 40.00;// the value of d
-  public static final double MARGIN = 10.00; // the value of k
-  public static final int FORWARD_SPEED = 100;
+  private double angleToTurn;
+  private double risingAngle = 180;
 
   /**
-   * UltrasonicLocalizer constructor
+   * Constructor to initialize variables
    * 
-   * @param leftMotor
-   * @param rightMotor
-   * @param odometer
-   * @throws OdometerExceptions
+   * @param Odometer
+   * @param EV3LargeRegulatedMotor
+   * @param EV3LargeRegulatedMotor
+   * @param Risingorfalling
+   * @param SampleProvider
    */
-  public UltrasonicLocalizer(EV3LargeRegulatedMotor leftMotor, EV3LargeRegulatedMotor rightMotor,
-      Odometer odometer) throws OdometerExceptions {
-
+  public UltrasonicLocalizer(Odometer odo, EV3LargeRegulatedMotor leftMotor,
+    EV3LargeRegulatedMotor rightMotor, boolean localizationType, SampleProvider usDistance) {
+    this.odometer = odo;
     this.leftMotor = leftMotor;
     this.rightMotor = rightMotor;
-    this.odometer = odometer;
-
-
-    SensorModes ultrasonicSensor = new EV3UltrasonicSensor(LocalEV3.get().getPort("S1"));
-    this.usDistance = ultrasonicSensor.getMode("Distance");
+    this.usDistance = usDistance;
     this.usData = new float[usDistance.sampleSize()];
-  }
 
-
-  public void fallingedge() {
-
-
-    distance = medianFilter();
-
-    // rotates counterclockwise until distance from wall is bigger than THRESHOLD
-    while (this.distance < MARGIN) {
-      leftMotor.setSpeed(FORWARD_SPEED);
-      rightMotor.setSpeed(FORWARD_SPEED);
-      leftMotor.backward();
-      rightMotor.forward();
-    }
-
-
-    while (this.distance > THRESHOLD) {
-      leftMotor.setSpeed(FORWARD_SPEED);
-      rightMotor.setSpeed(FORWARD_SPEED);
-      leftMotor.backward();
-      rightMotor.forward();
-
-    }
-
-    alpha = odometer.getXYT()[2]; // record the first value of the angle
-    Sound.beep(); // make a sound after recording the angle
-
-    // rotates clockwise until distance is greater than THRESHOLD
-    while (this.distance < MARGIN) {
-      leftMotor.setSpeed(FORWARD_SPEED);
-      rightMotor.setSpeed(FORWARD_SPEED);
-      leftMotor.forward();
-      rightMotor.backward();
-    }
-
- 
-    while (this.distance > THRESHOLD) {
-      leftMotor.setSpeed(FORWARD_SPEED);
-      rightMotor.setSpeed(FORWARD_SPEED);
-
-    }
-
-    beta = odometer.getXYT()[2]; // record the second angle.
-    Sound.beep();
-
-    leftMotor.stop();
-    rightMotor.stop();
-
-    theta = calculateTheta(alpha, beta);
-
-    // turns to adjust position; results in robot positioned at angle = 0 degrees
-    leftMotor.rotate(-convertAngle(Lab4.WHEEL_RAD, Lab4.TRACK, theta), true);
-    rightMotor.rotate(convertAngle(Lab4.WHEEL_RAD, Lab4.TRACK, theta), false);
-    odometer.setTheta(0);// reset the odometer
-    leftMotor.stop();
-    rightMotor.stop();
+    leftMotor.setSpeed(ROTATION_SPEED);
+    rightMotor.setSpeed(ROTATION_SPEED);
   }
 
   /**
-   * rising edge method called by run method positions robot at angle of 0 degrees rising edge
-   * method is called when the robot is originally facing a wall
+   * A method to localize position using the rising edge
+   * 
+   * @param alpha
+   * @param beta
+   * @param angleToTurn
    */
   public void risingEdge() {
-    distance = medianFilter();
 
 
-    // rotates counterclowise 
-    while (this.distance > MARGIN) {
-      leftMotor.setSpeed(FORWARD_SPEED);
-      rightMotor.setSpeed(FORWARD_SPEED);
+    // Rotate to the wall
+    while (medianFilter() > THRESHOLD) {
+      leftMotor.backward();
+      rightMotor.forward();
+    }
+    // Rotate until it sees the open space
+    while (medianFilter() < THRESHOLD + MARGIN) {
+      leftMotor.backward();
+      rightMotor.forward();
+    }
+    Sound.beep();
+    // record angle
+    alpha = odometer.getXYT()[2];
+    // make a sound so that we can know the angle is recorded
+    Sound.beep();
+
+    // rotate the other way until it sees the wall
+    while (medianFilter() > THRESHOLD) {
+      leftMotor.forward();
+      rightMotor.backward();
+    }
+
+    // rotate until it sees open space
+    while (medianFilter() < THRESHOLD + MARGIN) {
+      leftMotor.forward();
+      rightMotor.backward();
+    }
+
+    beta = odometer.getXYT()[2];
+    Sound.beep();
+    leftMotor.stop(true);
+    rightMotor.stop();
+
+    theta = calculateTheta(alpha, beta) + risingAngle;
+
+    angleToTurn = theta + odometer.getXYT()[2];
+
+    // rotate robot to theta = 0.0 using turning angle
+    // introduce a fix error correction
+    leftMotor.rotate(-convertAngle(Lab4.WHEEL_RAD, Lab4.TRACK, angleToTurn), true);
+    rightMotor.rotate(convertAngle(Lab4.WHEEL_RAD, Lab4.TRACK, angleToTurn), false);
+
+    // set theta = 0.0
+    odometer.setXYT(0.0, 0.0, 0.0);
+  }
+
+  /**
+   * A method to localize position using the falling edge
+   * 
+   */
+  public void fallingEdge() {
+
+
+    // Rotate to open space
+    while (medianFilter() < THRESHOLD + MARGIN) {
+      leftMotor.backward();
+      rightMotor.forward();
+    }
+    // Rotate to the first wall
+    while (medianFilter() > THRESHOLD) {
       leftMotor.backward();
       rightMotor.forward();
     }
 
-
-    // rotates counterclowise
-    while (this.distance < THRESHOLD) {
-      leftMotor.setSpeed(FORWARD_SPEED);
-      rightMotor.setSpeed(FORWARD_SPEED);
-      leftMotor.backward();
-      rightMotor.forward();
-    }
-    leftMotor.stop();
-    rightMotor.stop();
-
-    alpha = odometer.getXYT()[2];// record the first angle
+    // record angle
+    alpha = odometer.getXYT()[2];
+    // make a sound so that we can know the angle is recorded
     Sound.beep();
-
-    // rotates clockwise 
-    while (this.distance > MARGIN) {
-      leftMotor.setSpeed(FORWARD_SPEED);
-      rightMotor.setSpeed(FORWARD_SPEED);
+    // rotate out of the wall
+    while (medianFilter() < THRESHOLD + MARGIN) {
       leftMotor.forward();
       rightMotor.backward();
-
     }
-    leftMotor.stop();
-    rightMotor.stop();
 
-    // rotates clockwise
-    while (this.distance < THRESHOLD) {
-      leftMotor.setSpeed(FORWARD_SPEED);
-      rightMotor.setSpeed(FORWARD_SPEED);
+    // rotate to the second wall
+    while (medianFilter() > THRESHOLD) {
       leftMotor.forward();
       rightMotor.backward();
-
     }
-    leftMotor.stop();
+    Sound.beep();
+    beta = odometer.getXYT()[2];
+
+    leftMotor.stop(true);
     rightMotor.stop();
 
-    beta = odometer.getXYT()[2]; // record the second angle
-    Sound.beep();
-
-    // turns to adjust position; results in robot positioned at angle = 0 degrees
-    
+    // calculate angle of rotation by using the formula given in the tutorial
     theta = calculateTheta(alpha, beta);
-    leftMotor.rotate(convertAngle(Lab4.WHEEL_RAD, Lab4.TRACK, theta), true);
-    rightMotor.rotate(-convertAngle(Lab4.WHEEL_RAD, Lab4.TRACK, theta ), false);
-    odometer.setTheta(0);//reset the odometer
-    leftMotor.stop();
-    rightMotor.stop();
+    angleToTurn = theta + odometer.getXYT()[2];
+
+    // rotate robot to the theta = 0.0
+    // introduce a fix error correction
+    leftMotor.rotate(-convertAngle(Lab4.WHEEL_RAD, Lab4.TRACK, angleToTurn), true);
+    rightMotor.rotate(convertAngle(Lab4.WHEEL_RAD, Lab4.TRACK, angleToTurn), false);
+
+    // set odometer to theta = 0
+    odometer.setXYT(0.0, 0.0, 0.0);
+
   }
 
 
@@ -193,7 +179,7 @@ public class UltrasonicLocalizer {
 
 
   private double calculateTheta(double alpha, double beta) {// calculate the value of theta
-
+    double theta = 0;
     if (alpha < beta) {
       theta = 45 - (alpha + beta) / 2;
 
@@ -206,22 +192,29 @@ public class UltrasonicLocalizer {
   }
 
 
-  private static int convertDistance(double radius, double distance) {
+  /**
+   * This method implement the conversion of a distance to rotation of each wheel need to cover the
+   * distance.
+   * 
+   * @param radius
+   * @param distance
+   * @return
+   */
+  public static int convertDistance(double radius, double distance) {
     return (int) ((180.0 * distance) / (Math.PI * radius));
   }
 
   /**
-   * This method allows the conversion of an angle to the total distance that the robot needs to
-   * cover.
+   * This method implement the conversion of a angle to rotation of each wheel need to cover the
+   * distance.
    * 
    * @param radius
-   * @param wideltaTh
+   * @param distance
    * @param angle
-   * @return (int)angle converted
-   * 
+   * @return
    */
-
-  private static int convertAngle(double radius, double wideltaTh, double angle) {
-    return convertDistance(radius, Math.PI * wideltaTh * angle / 360.0);
+  public static int convertAngle(double radius, double width, double angle) {
+    return convertDistance(radius, Math.PI * width * angle / 360.0);
   }
+
 }
