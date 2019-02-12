@@ -56,8 +56,8 @@ public class Odometer extends OdometerData implements Runnable {
 
   /**
    * 
-   * This is the default constructor of this class. It initiates 
-   * all motors and variables once.It cannot be accessed externally.
+   * This is the default constructor of this class. It initiates all motors and variables once.It
+   * cannot be accessed externally.
    * 
    * @param leftMotor
    * @param rightMotor
@@ -82,7 +82,7 @@ public class Odometer extends OdometerData implements Runnable {
 
     this.TRACK = TRACK;
     this.WHEEL_RAD = WHEEL_RAD;
-    
+
   }
 
 
