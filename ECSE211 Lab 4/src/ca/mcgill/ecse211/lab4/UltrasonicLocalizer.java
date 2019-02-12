@@ -10,8 +10,7 @@ import ca.mcgill.ecse211.lab4.*;
 public class UltrasonicLocalizer {
 
   // robot constants
-  public static int ROTATION_SPEED = 100;
-
+  public static int ROTATION_SPEED = 75;
   private Odometer odometer;
   private float[] usData;
   private EV3LargeRegulatedMotor leftMotor, rightMotor;
@@ -19,7 +18,7 @@ public class UltrasonicLocalizer {
 
 
 
-  private double THRESHOLD = 20.00;// the value of d
+  private double THRESHOLD = 22.00;// the value of d
   private double MARGIN = 2.00;// the value of k
   private double alpha, beta, theta;
   private double angleToTurn;
@@ -35,7 +34,7 @@ public class UltrasonicLocalizer {
    * @param SampleProvider
    */
   public UltrasonicLocalizer(Odometer odo, EV3LargeRegulatedMotor leftMotor,
-    EV3LargeRegulatedMotor rightMotor, boolean localizationType, SampleProvider usDistance) {
+      EV3LargeRegulatedMotor rightMotor, boolean localizationType, SampleProvider usDistance) {
     this.odometer = odo;
     this.leftMotor = leftMotor;
     this.rightMotor = rightMotor;
@@ -44,6 +43,68 @@ public class UltrasonicLocalizer {
 
     leftMotor.setSpeed(ROTATION_SPEED);
     rightMotor.setSpeed(ROTATION_SPEED);
+  }
+
+
+
+  /**
+   * A method to localize position using the falling edge
+   * 
+   */
+  public void fallingEdge() {
+
+
+    // Rotate to open space
+    while (medianFilter() < THRESHOLD + MARGIN) {
+      leftMotor.backward();
+      rightMotor.forward();
+    }
+    // Rotate to the first wall
+    while (medianFilter() > THRESHOLD) {
+      leftMotor.backward();
+      rightMotor.forward();
+    }
+
+    // record angle
+    alpha = odometer.getXYT()[2];
+    // make a sound so that we can know the angle is recorded
+    Sound.beep();
+    leftMotor.stop(true);
+    rightMotor.stop();
+    // rotate out of the wall
+    while (medianFilter() < THRESHOLD + MARGIN) {
+      leftMotor.forward();
+      rightMotor.backward();
+    }
+
+    // rotate to the second wall
+    while (medianFilter() > THRESHOLD) {
+      leftMotor.forward();
+      rightMotor.backward();
+    }
+    Sound.beep();
+    beta = odometer.getXYT()[2];
+
+    leftMotor.stop(true);
+    rightMotor.stop();
+
+    // calculate angle of rotation by using the formula given in the tutorial
+    theta = calculateTheta(alpha, beta);
+
+    if (Math.abs(alpha - beta) <= 100) { // when the robot is facing the wall, it will turn around
+      angleToTurn = theta + odometer.getXYT()[2] + risingAngle;
+    } else {//when the robot is not facing the wall
+      angleToTurn = theta + odometer.getXYT()[2];
+
+    }
+    // rotate robot to the theta = 0.0
+    // introduce a fix error correction
+    leftMotor.rotate(-convertAngle(Lab4.WHEEL_RAD, Lab4.TRACK, angleToTurn), true);
+    rightMotor.rotate(convertAngle(Lab4.WHEEL_RAD, Lab4.TRACK, angleToTurn), false);
+
+    // set odometer to theta = 0
+    odometer.setXYT(0.0, 0.0, 0.0);
+
   }
 
   /**
@@ -102,58 +163,6 @@ public class UltrasonicLocalizer {
     odometer.setXYT(0.0, 0.0, 0.0);
   }
 
-  /**
-   * A method to localize position using the falling edge
-   * 
-   */
-  public void fallingEdge() {
-
-
-    // Rotate to open space
-    while (medianFilter() < THRESHOLD + MARGIN) {
-      leftMotor.backward();
-      rightMotor.forward();
-    }
-    // Rotate to the first wall
-    while (medianFilter() > THRESHOLD) {
-      leftMotor.backward();
-      rightMotor.forward();
-    }
-
-    // record angle
-    alpha = odometer.getXYT()[2];
-    // make a sound so that we can know the angle is recorded
-    Sound.beep();
-    // rotate out of the wall
-    while (medianFilter() < THRESHOLD + MARGIN) {
-      leftMotor.forward();
-      rightMotor.backward();
-    }
-
-    // rotate to the second wall
-    while (medianFilter() > THRESHOLD) {
-      leftMotor.forward();
-      rightMotor.backward();
-    }
-    Sound.beep();
-    beta = odometer.getXYT()[2];
-
-    leftMotor.stop(true);
-    rightMotor.stop();
-
-    // calculate angle of rotation by using the formula given in the tutorial
-    theta = calculateTheta(alpha, beta);
-    angleToTurn = theta + odometer.getXYT()[2];
-
-    // rotate robot to the theta = 0.0
-    // introduce a fix error correction
-    leftMotor.rotate(-convertAngle(Lab4.WHEEL_RAD, Lab4.TRACK, angleToTurn), true);
-    rightMotor.rotate(convertAngle(Lab4.WHEEL_RAD, Lab4.TRACK, angleToTurn), false);
-
-    // set odometer to theta = 0
-    odometer.setXYT(0.0, 0.0, 0.0);
-
-  }
 
 
   /**

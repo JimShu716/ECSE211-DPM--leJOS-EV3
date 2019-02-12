@@ -1,17 +1,22 @@
 
 /**
      * This class contains the main method which implements the 
-     * odometer and the navigation systems on the EV3 robot. It 
-     * first initializes the robot's motors and ultrasonic sensor, 
-     * defines hardware constants such as the axle track, and 
-     * prompts the user to execute a simple navigation or an obstacle 
-     * avoidance navigation. Then, threads are instantiated for the 
-     * odometer and the navigator. 
+     * hardware required to execute the fourth laboratory. The
+     * purpose of laboratory 4 is to localize the robot given
+     * an arbitrary starting position. In other words, it is 
+     * placed at a starting position, and it has to gather 
+     * data using the ultrasonic sensor and the light sensor
+     * to orient itself towards the origin of the grid system,
+     * i.e (0,0). A reference system is defined in terms of x,y
+     * and theta in order to localize the robot. The 
+     * UltrasonicLocalizer class is first implemented to orient 
+     * the robot at the required heading. Then, upon the user's
+     * prompt, the LightLocalizer class is implemented to drive
+     * the robot to the origin of the grid system. 
      * 
      * @author1 Cristian Ciungu
      * @author2 Hao Shu
-     * 
-     * @version 05-02-2019
+     * @version 12-02-2019
      * 
      */
 package ca.mcgill.ecse211.lab4;
@@ -41,7 +46,7 @@ public class Lab4 {
 
     //Robot related parameters
     public static final double WHEEL_RAD = 2.2;
-    public static final double TRACK = 10.50;
+    public static final double TRACK = 10.6;
 
     public static void main(String[] args) throws OdometerExceptions {
 

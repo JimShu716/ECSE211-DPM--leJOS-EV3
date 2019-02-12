@@ -1,78 +1,54 @@
 /**
  * 
- * This class implements the odometer.
+ * This class extends OdometerData, and it implements Runnable. It allows for the implementation of
+ * the odometer system.
  * 
  * @author1 Cristian Ciungu
  * @author2 Hao Shu
- * @version 05-02-2019
+ * @version 12-02-2019
+ * 
  */
+
+// import package
 
 package ca.mcgill.ecse211.odometer;
 
+// import motor class
 
 import lejos.hardware.motor.EV3LargeRegulatedMotor;
 
-
-
 public class Odometer extends OdometerData implements Runnable {
 
-
-
   private OdometerData odoData;
-
-  private static Odometer odo = null; // Returned as singleton
-
-
+  private static Odometer odo = null;
 
   // Motors and related variables
 
   private int leftMotorTachoCount;
-
   private int rightMotorTachoCount;
 
   private EV3LargeRegulatedMotor leftMotor;
-
   private EV3LargeRegulatedMotor rightMotor;
 
-
-
   private final double TRACK;
-
   private final double WHEEL_RAD;
-
-
 
   private double[] position;
 
-
-
   private double LastTacho_Right = 0.00;
-
   private double LastTacho_Left = 0.00;
 
-
-
   private double deltaTacho_Right;
-
   private double deltaTacho_Left;// change in tacho of the right motor and the left motor
 
-
-
   private double distance_Left;
-
   private double distance_Right;
 
-
-
   private double deltaDistance;
-
   private double deltaAngle;
 
   private double T = 0, X = 0, Y = 0;
-
   private double deltaT, deltaX, deltaY;
-
-
 
   private static final long ODOMETER_PERIOD = 25; // odometer update period in ms
 
@@ -80,52 +56,33 @@ public class Odometer extends OdometerData implements Runnable {
 
   /**
    * 
-   * This is the default constructor of this class. It initiates all motors and variables once.It
-   * 
-   * cannot be accessed externally.
-   * 
-   * 
+   * This is the default constructor of this class. It initiates 
+   * all motors and variables once.It cannot be accessed externally.
    * 
    * @param leftMotor
-   * 
    * @param rightMotor
-   * 
    * @throws OdometerExceptions
    * 
    */
 
   public Odometer(EV3LargeRegulatedMotor leftMotor, EV3LargeRegulatedMotor rightMotor,
-
       final double TRACK, final double WHEEL_RAD) throws OdometerExceptions {
 
-    odoData = OdometerData.getOdometerData(); // Allows access to x,y,z
-
-    // manipulation methods
+    odoData = OdometerData.getOdometerData(); // Allows access to x,y,z manipulation methods
 
     this.leftMotor = leftMotor;
-
     this.rightMotor = rightMotor;
-
-
 
     // Reset the values of x, y and z to 0
 
     odoData.setXYT(0, 0, 0);
 
-
-
     this.leftMotorTachoCount = 0;
-
     this.rightMotorTachoCount = 0;
 
-
-
     this.TRACK = TRACK;
-
     this.WHEEL_RAD = WHEEL_RAD;
-
-
-
+    
   }
 
 
@@ -133,23 +90,16 @@ public class Odometer extends OdometerData implements Runnable {
   /**
    * 
    * This method is meant to ensure only one instance of the odometer is used throughout the code.
-   * 
-   * 
-   * 
+   *
    * @param leftMotor
-   * 
    * @param rightMotor
-   * 
    * @return new or existing Odometer Object
-   * 
    * @throws OdometerExceptions
    * 
    */
 
   public synchronized static Odometer getOdometer(EV3LargeRegulatedMotor leftMotor,
-
       EV3LargeRegulatedMotor rightMotor, final double TRACK, final double WHEEL_RAD)
-
       throws OdometerExceptions {
 
     if (odo != null) { // Return existing object
@@ -166,29 +116,20 @@ public class Odometer extends OdometerData implements Runnable {
 
   }
 
-
-
   /**
    * 
    * This class is meant to return the existing Odometer Object. It is meant to be used only if an
-   * 
-   * odometer object has been created
-   * 
-   * 
-   * 
+   * odometer object has been created.
+   *
    * @return error if no previous odometer exists
    * 
    */
 
   public synchronized static Odometer getOdometer() throws OdometerExceptions {
 
-
-
     if (odo == null) {
 
       throw new OdometerExceptions("No previous Odometer exits.");
-
-
 
     }
 
@@ -235,7 +176,7 @@ public class Odometer extends OdometerData implements Runnable {
       distance_Left = Math.PI * WHEEL_RAD * deltaTacho_Left / 180;
 
       distance_Right = Math.PI * WHEEL_RAD * deltaTacho_Right / 180;// calculate the distance
-                                                                    // travelled by the motors
+      // travelled by the motors
 
 
 

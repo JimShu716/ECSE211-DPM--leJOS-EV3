@@ -1,9 +1,7 @@
 
 package ca.mcgill.ecse211.lab4;
 
-
 import lejos.hardware.Sound;
-
 import lejos.hardware.ev3.LocalEV3;
 import lejos.hardware.motor.EV3LargeRegulatedMotor;
 import lejos.hardware.sensor.EV3ColorSensor;
@@ -14,27 +12,28 @@ import java.util.Arrays;
 public class LightLocalizer implements Runnable {
 
   // robot constants
-  public final static int ROTATION_SPEED = 100;
-  private final static double SENSOR_LENGTH = 15.00;
-  private final static int FORWARD_SPEED = 80;
-  private final static int ROTATE_SPEED = 100;
-  
+  public final static int ROTATION_SPEED = UltrasonicLocalizer.ROTATION_SPEED;//the speed for the rotation of the robot
+  private final static double SENSOR_LENGTH = 15.00;//the length from the head of the robot to the sensor 
+  private final static int FORWARD_SPEED = 80;//the speed for the robot to go forward
+
   private Odometer odometer;
   private EV3LargeRegulatedMotor leftMotor, rightMotor;
   // Instantiate the EV3 ColorSensor
-  private static final EV3ColorSensor ColorSensor = new EV3ColorSensor(LocalEV3.get().getPort("S2"));
+  private static final EV3ColorSensor ColorSensor =
+      new EV3ColorSensor(LocalEV3.get().getPort("S2"));
   private double light_received;
 
   private SampleProvider Color;
   float[] colorData;
-  double[] linecounter;
+  double[] line_num;
 
-  private double LastX,LastY,LastT;
+  private double LastX, LastY, LastT;
   private double alpha, beta;
-  private double delta_alpha, delta_beta,deltaX,deltaY;
-  private double angleError =30;
+  private double delta_alpha, delta_beta;
+  private double angleError = 15;// offset for the turning angle
 
-  public LightLocalizer(Odometer odometer, EV3LargeRegulatedMotor leftMotor, EV3LargeRegulatedMotor rightMotor) {
+  public LightLocalizer(Odometer odometer, EV3LargeRegulatedMotor leftMotor,
+      EV3LargeRegulatedMotor rightMotor) {
 
     this.odometer = odometer;
     this.leftMotor = leftMotor;
@@ -42,78 +41,75 @@ public class LightLocalizer implements Runnable {
 
     this.Color = ColorSensor.getMode("Red");
     colorData = new float[ColorSensor.sampleSize()];
-    linecounter = new double[5];
-    }
+    line_num = new double[5];
+  }
 
-    /**
-     * This method localizes the robot using the light sensor to precisely move to
-     * the right location
-     * @param light_received
-     * @param counter
-     */
+  /**
+   * This method localizes the robot using the light sensor to precisely move to the right location
+   * 
+   * @param light_received
+   * @param counter
+   */
   public void run() {
 
     int counter = 0;
-      leftMotor.setSpeed(ROTATION_SPEED);
-      rightMotor.setSpeed(ROTATION_SPEED);
+    leftMotor.setSpeed(ROTATION_SPEED);
+    rightMotor.setSpeed(ROTATION_SPEED);
 
-      //Rotate and scan four lines, record angle respectively
-      //increase the counter variable for 1, each time detection of line
-      while (counter < 5) {
+    // Rotate and scan four lines, record angle respectively
+    // increase the counter variable for 1, each time detection of line
+    while (counter < 5) {
 
-        leftMotor.backward();
-        rightMotor.forward();
+      leftMotor.backward();
+      rightMotor.forward();
 
-        light_received = medianFilter();
+      light_received = medianFilter();
 
-        //detect lines, 0.37 determine by test and represents low density of reflection
-        if (light_received < 30) {
-          linecounter[counter] = odometer.getXYT()[2];
-          Sound.beep();
-          counter++;
-            }
-        }
-
-        leftMotor.stop(true);
-        rightMotor.stop();
-
-     
-
-      // Get our location from origin using the calculated angles
-     
-      alpha = linecounter[3] - linecounter[1];// angle in x-axis
-      beta = linecounter[2] - linecounter[0];// angle in y-axis
-      //use the formula given in tutorial to calculate the position in x and y axis
-      delta_alpha = -SENSOR_LENGTH * Math.cos(Math.toRadians(alpha / 2));
-      delta_beta = -SENSOR_LENGTH * Math.cos(Math.toRadians(beta / 2));
-      //angle correction from tutorial
-      deltaY = 3*Math.PI/4 - linecounter[0] + (beta/ 2.0);
-
-      // travel to origin from current calculated position
-      odometer.setXYT(delta_beta, delta_alpha, odometer.getXYT()[2]+angleError);
-      this.travelTo(0.00, 0.00);
-
-      leftMotor.setSpeed(ROTATION_SPEED );
-      rightMotor.setSpeed(ROTATION_SPEED);
-
-      // if we are not facing 0.0 then turn ourselves so that we are
-      if (odometer.getXYT()[2] <= 355 && odometer.getXYT()[2] >= 5.0) {
+      // detect lines, 0.37 determine by test and represents low density of reflection
+      if (light_received < 20) {
+        line_num[counter] = odometer.getXYT()[2];
         Sound.beep();
-        leftMotor.rotate(convertAngle(Lab4.WHEEL_RAD, Lab4.TRACK, -odometer.getXYT()[2]+ deltaY), true);
-        rightMotor.rotate(-convertAngle(Lab4.WHEEL_RAD, Lab4.TRACK, -odometer.getXYT()[2] + deltaY), false);
-        }
-
-        leftMotor.stop(true);
-        rightMotor.stop();
-        odometer.setTheta(0.00);
-
+        counter++;
+      }
     }
+
+    leftMotor.stop(true);
+    rightMotor.stop();
+
+
+
+    // Get our location from origin using the calculated angles
+
+    alpha = line_num[3] - line_num[1];// angle in x-axis
+    beta = line_num[2] - line_num[0];// angle in y-axis
+    // use the formula given in tutorial to calculate the position in x and y axis
+    delta_alpha = -SENSOR_LENGTH * Math.cos(Math.toRadians(alpha / 2));
+    delta_beta = -SENSOR_LENGTH * Math.cos(Math.toRadians(beta / 2));
+
+    // travel to origin from current calculated position
+    odometer.setXYT(delta_beta, delta_alpha, odometer.getXYT()[2] + angleError);
+    this.travelTo(0.00, 0.00);
+
+    leftMotor.setSpeed(ROTATION_SPEED);
+    rightMotor.setSpeed(ROTATION_SPEED);
+
+    // if we are not facing 0.0 then turn ourselves with a certain angle to face 0.0
+    if (odometer.getXYT()[2] <= 355 && odometer.getXYT()[2] >= 5.0) {
+      Sound.beep();
+      leftMotor.rotate(convertAngle(Lab4.WHEEL_RAD, Lab4.TRACK, -odometer.getXYT()[2]), true);
+      rightMotor.rotate(-convertAngle(Lab4.WHEEL_RAD, Lab4.TRACK, -odometer.getXYT()[2]), false);
+    }
+
+    leftMotor.stop(true);
+    rightMotor.stop();
+    odometer.setXYT(0.00, 0.00, 0.00);// set the value of x, y, and theta to zero.
+
+  }
 
 
   /**
-   * This method allows the conversion of a 
-   * distance to the total rotation of each
-   * wheel need to cover that distance.
+   * This method allows the conversion of a distance to the total rotation of each wheel need to
+   * cover that distance.
    * 
    * @param Lab3.WHEEL_RAD
    * @param distance
@@ -121,37 +117,36 @@ public class LightLocalizer implements Runnable {
    * 
    */
   private static int convertDistance(double radius, double distance) {
-      return (int) ((180.0 * distance) / (Math.PI * radius));
+    return (int) ((180.0 * distance) / (Math.PI * radius));
   }
-  
+
   /**
-   * This method allows the conversion of an 
-   * angle to the total distance that the robot
-   * needs to cover. 
+   * This method allows the conversion of an angle to the total distance that the robot needs to
+   * cover.
    * 
    * @param radius
    * @param wideltaTh
    * @param angle
-   * @return (int)angle converted 
+   * @return (int)angle converted
    * 
    */
-  
+
   private static int convertAngle(double radius, double wideltaTh, double angle) {
-      return convertDistance(radius, Math.PI * wideltaTh * angle / 360.0);
+    return convertDistance(radius, Math.PI * wideltaTh * angle / 360.0);
   }
 
   /**
-   * This method use a median filter to filter the data collected by the sensor.
-   * This method can help avoid the effect caused by unusual readings.
-   *  
+   * This method use a median filter to filter the data collected by the sensor. This method can
+   * help avoid the effect caused by unusual readings.
    * 
-   * @param void 
+   * 
+   * @param void
    * @return median value
    * 
    */
-  
+
   private double medianFilter() {
-    double[] filterData = new double[5]; //use an array to store readings
+    double[] filterData = new double[5]; // use an array to store readings
     for (int i = 0; i < 5; i++) { // take 5 readings
       Color.fetchSample(colorData, 0);
       filterData[i] = colorData[0] * 100.0; // put the readings in array and amplify them
@@ -162,6 +157,7 @@ public class LightLocalizer implements Runnable {
 
   /**
    * This method make the robot go to the point (x,y)
+   * 
    * @param x
    * @param y
    * @param currentx
@@ -194,12 +190,10 @@ public class LightLocalizer implements Runnable {
     rightMotor.stop(true);
     leftMotor.stop(true);// stop the robot
   }
-  
+
   /**
-   * This method causes the robot to turn 
-   * (on point) to the absolute heading theta. 
-   * This method should turn a MINIMAL angle 
-   * to its target.
+   * This method causes the robot to turn (on point) to the absolute heading theta. This method
+   * should turn a MINIMAL angle to its target.
    * 
    * @param theta
    * @return void
@@ -209,8 +203,8 @@ public class LightLocalizer implements Runnable {
 
     theta = theta * 180.0 / Math.PI;// convert the angle from radian to degree
 
-    leftMotor.setSpeed(ROTATE_SPEED);// Set speed to move in a straight line
-    rightMotor.setSpeed(ROTATE_SPEED);
+    leftMotor.setSpeed(ROTATION_SPEED);// Set speed to move in a straight line
+    rightMotor.setSpeed(ROTATION_SPEED);
 
     if (theta <= -180) {// when the angle is larger than 180 degree
       theta += 180 * 2;
@@ -229,5 +223,5 @@ public class LightLocalizer implements Runnable {
     }
 
   }
-    
+
 }

@@ -1,12 +1,12 @@
 /**
  * This class implements Runnable. It is used
  *  to display the content of the odometer 
- *  variables, i.e. X,Y and Theta, on the LCD
+ *  variables, i.e. x,y and theta, on the LCD
  *  screen of the EV3 brick.
  *  
  *  @author1 Cristian Ciungu
  *  @author2 Hao Shu
- *  @version 05-02-2019
+ *  @version 12-02-2019
  *  
  */
 
@@ -32,6 +32,7 @@ public class Display implements Runnable {
    * @throws OdometerExceptions 
    * 
    */
+  
   public Display(TextLCD lcd) throws OdometerExceptions {
     odo = Odometer.getOdometer();
     this.lcd = lcd;
@@ -50,13 +51,20 @@ public class Display implements Runnable {
     this.lcd = lcd;
   }
 
-  // run method (required to implement Runnable) 
+  /**
+   * This method initiates the LCD screen on the 
+   * EV3 brick. It then displays the robot's position
+   * (x,y,theta) on the screen. A timer is implemented 
+   * so that position updates are applied on a regular
+   * basis. 
+   * 
+   */
+  
   public void run() {
     
     lcd.clear();
     
     long updateStart, updateEnd;
-
     long tStart = System.currentTimeMillis();
     do {
       updateStart = System.currentTimeMillis();
@@ -84,4 +92,4 @@ public class Display implements Runnable {
 
   }
 
-}
+} // end Display
