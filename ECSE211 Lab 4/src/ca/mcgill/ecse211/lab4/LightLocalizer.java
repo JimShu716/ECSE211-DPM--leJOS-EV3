@@ -12,25 +12,31 @@ import java.util.Arrays;
 public class LightLocalizer implements Runnable {
 
   // robot constants
-  public final static int ROTATION_SPEED = UltrasonicLocalizer.ROTATION_SPEED;//the speed for the rotation of the robot
-  private final static double SENSOR_LENGTH = 15.00;//the length from the head of the robot to the sensor 
-  private final static int FORWARD_SPEED = 80;//the speed for the robot to go forward
+  public final static int ROTATION_SPEED = UltrasonicLocalizer.ROTATION_SPEED;// the speed for the
+                                                                              // rotation of the
+                                                                              // robot
+  private final static double SENSOR_LENGTH = 15.00;// the length from the head of the robot to the
+                                                    // Sensor
+
+  private final static int FORWARD_SPEED = 80;// the speed for the robot to go forward
 
   private Odometer odometer;
   private EV3LargeRegulatedMotor leftMotor, rightMotor;
-  // Instantiate the EV3 ColorSensor
   private static final EV3ColorSensor ColorSensor =
-      new EV3ColorSensor(LocalEV3.get().getPort("S2"));
+      new EV3ColorSensor(LocalEV3.get().getPort("S2"));// Instantiate the EV3 ColorSensor
   private double light_received;
 
   private SampleProvider Color;
   float[] colorData;
-  double[] line_num;
+  int counter = 0; // a counter is used to record the number of black lines detected
+  double[] line_num;// an array to record the angle of the robot at each black line
 
-  private double LastX, LastY, LastT;
-  private double alpha, beta;
-  private double delta_alpha, delta_beta;
+  private double LastX, LastY, LastT;// the current readings of x, y, and theta
+  private double alpha, beta; // the turning angle on x-axis and y-axis
+  private double delta_alpha, delta_beta;// the change in distance in x-axis and y-axis
   private double angleError = 15;// offset for the turning angle
+
+
 
   public LightLocalizer(Odometer odometer, EV3LargeRegulatedMotor leftMotor,
       EV3LargeRegulatedMotor rightMotor) {
@@ -52,27 +58,28 @@ public class LightLocalizer implements Runnable {
    */
   public void run() {
 
-    int counter = 0;
+
     leftMotor.setSpeed(ROTATION_SPEED);
     rightMotor.setSpeed(ROTATION_SPEED);
 
     // Rotate and scan four lines, record angle respectively
-    // increase the counter variable for 1, each time detection of line
+    // increase the counter variable by 1 for each time detection of line
+
     while (counter < 5) {
 
       leftMotor.backward();
       rightMotor.forward();
 
-      light_received = medianFilter();
+      light_received = medianFilter();// get data from the median filter
 
-      // detect lines, 0.37 determine by test and represents low density of reflection
+      // lines detected,20 means low density of reflection
       if (light_received < 20) {
         line_num[counter] = odometer.getXYT()[2];
-        Sound.beep();
+        Sound.beep();// give a sound so that we can know that the lines are detected
         counter++;
       }
     }
-
+    // when the robot scans a same line for twice, the robot will stop
     leftMotor.stop(true);
     rightMotor.stop();
 
@@ -82,6 +89,7 @@ public class LightLocalizer implements Runnable {
 
     alpha = line_num[3] - line_num[1];// angle in x-axis
     beta = line_num[2] - line_num[0];// angle in y-axis
+
     // use the formula given in tutorial to calculate the position in x and y axis
     delta_alpha = -SENSOR_LENGTH * Math.cos(Math.toRadians(alpha / 2));
     delta_beta = -SENSOR_LENGTH * Math.cos(Math.toRadians(beta / 2));
@@ -100,7 +108,7 @@ public class LightLocalizer implements Runnable {
       rightMotor.rotate(-convertAngle(Lab4.WHEEL_RAD, Lab4.TRACK, -odometer.getXYT()[2]), false);
     }
 
-    leftMotor.stop(true);
+    leftMotor.stop(true);// stop the robot
     rightMotor.stop();
     odometer.setXYT(0.00, 0.00, 0.00);// set the value of x, y, and theta to zero.
 
@@ -136,9 +144,10 @@ public class LightLocalizer implements Runnable {
   }
 
   /**
-   * This method use a median filter to filter the data collected by the sensor. This method can
-   * help avoid the effect caused by unusual readings.
+   * This method use a median filter to filter the data collected by the sensor and toss out the
+   * invalid sample
    * 
+   * This method can help avoid the effect caused by invalid readings.
    * 
    * @param void
    * @return median value

@@ -20,9 +20,9 @@ public class UltrasonicLocalizer {
 
   private double THRESHOLD = 22.00;// the value of d
   private double MARGIN = 2.00;// the value of k
-  private double alpha, beta, theta;
+  private double alpha, beta, theta;// the angle recorded when the sensor detects the wall
   private double angleToTurn;
-  private double risingAngle = 180;
+  private double risingAngle = 180;// offset for the turning angle
 
   /**
    * Constructor to initialize variables
@@ -30,11 +30,10 @@ public class UltrasonicLocalizer {
    * @param Odometer
    * @param EV3LargeRegulatedMotor
    * @param EV3LargeRegulatedMotor
-   * @param Risingorfalling
    * @param SampleProvider
    */
   public UltrasonicLocalizer(Odometer odo, EV3LargeRegulatedMotor leftMotor,
-      EV3LargeRegulatedMotor rightMotor, boolean localizationType, SampleProvider usDistance) {
+      EV3LargeRegulatedMotor rightMotor, SampleProvider usDistance) {
     this.odometer = odo;
     this.leftMotor = leftMotor;
     this.rightMotor = rightMotor;
@@ -93,7 +92,7 @@ public class UltrasonicLocalizer {
 
     if (Math.abs(alpha - beta) <= 100) { // when the robot is facing the wall, it will turn around
       angleToTurn = theta + odometer.getXYT()[2] + risingAngle;
-    } else {//when the robot is not facing the wall
+    } else {// when the robot is not facing the wall
       angleToTurn = theta + odometer.getXYT()[2];
 
     }
@@ -102,7 +101,7 @@ public class UltrasonicLocalizer {
     leftMotor.rotate(-convertAngle(Lab4.WHEEL_RAD, Lab4.TRACK, angleToTurn), true);
     rightMotor.rotate(convertAngle(Lab4.WHEEL_RAD, Lab4.TRACK, angleToTurn), false);
 
-    // set odometer to theta = 0
+    // set odometer to x, y,theta = 0
     odometer.setXYT(0.0, 0.0, 0.0);
 
   }
@@ -159,15 +158,15 @@ public class UltrasonicLocalizer {
     leftMotor.rotate(-convertAngle(Lab4.WHEEL_RAD, Lab4.TRACK, angleToTurn), true);
     rightMotor.rotate(convertAngle(Lab4.WHEEL_RAD, Lab4.TRACK, angleToTurn), false);
 
-    // set theta = 0.0
+    // set x,y,theta = 0.0
     odometer.setXYT(0.0, 0.0, 0.0);
   }
 
 
 
   /**
-   * This method use a median filter to filter the data collected by the sensor and toss out the in
-   * valid sample
+   * This method use a median filter to filter the data collected by the sensor and toss out the
+   * invalid sample
    * 
    * This method can help avoid the effect caused by invalid readings.
    * 
@@ -185,6 +184,15 @@ public class UltrasonicLocalizer {
     return filterData[2]; // take median value
   }
 
+
+  /**
+   * This method is used to calculate the angle to be added to the heading reported by the odometer
+   * based on the value of alpha and beta
+   * 
+   * @param alpha
+   * @param beta
+   * @return theta
+   */
 
 
   private double calculateTheta(double alpha, double beta) {// calculate the value of theta
