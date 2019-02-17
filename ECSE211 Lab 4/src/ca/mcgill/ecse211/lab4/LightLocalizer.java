@@ -1,4 +1,14 @@
-
+/**
+ * This clas implements light localization to complete the localization process for the robot. It
+ * detects a given amount of black lines on the test surface. Then, it uses the angles at which the
+ * robot detected those lines to orient itself towards the origin.
+ * 
+ * @author1 Cristian Ciungu
+ * @author2 Hao Shu
+ * @version 12-02-2019
+ * 
+ * 
+ */
 package ca.mcgill.ecse211.lab4;
 
 import lejos.hardware.Sound;
@@ -37,7 +47,14 @@ public class LightLocalizer implements Runnable {
   private double angleError = 15;// offset for the turning angle
 
 
-
+  /**
+   * 
+   * Default constructor.
+   * 
+   * @param odometer
+   * @param leftMotor
+   * @param rightMotor
+   */
   public LightLocalizer(Odometer odometer, EV3LargeRegulatedMotor leftMotor,
       EV3LargeRegulatedMotor rightMotor) {
 
@@ -233,4 +250,4 @@ public class LightLocalizer implements Runnable {
 
   }
 
-}
+}// end LightLocalizer
