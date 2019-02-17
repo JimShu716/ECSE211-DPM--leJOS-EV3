@@ -1,3 +1,19 @@
+
+
+/**
+ * This class implements the first step in the localization process, that is to say ultrasonic
+ * localization. Essentially, it implements the ultrasonic sensor to filter distances through either
+ * the falling edge or the raising edge process. Then, once the filtering is done, two angles (alpha
+ * and beta), and the robot uses those to orient its heading in the direction of increasing y.
+ * 
+ * @author1 Cristian Ciungu
+ * @author2 Hao Shu
+ * @version 12-02-2019
+ * 
+ * 
+ */
+
+// import package
 package ca.mcgill.ecse211.lab4;
 
 import lejos.hardware.Sound;
@@ -9,16 +25,25 @@ import ca.mcgill.ecse211.lab4.*;
 
 public class UltrasonicLocalizer {
 
-  // robot constants
+
+  /**
+   * speed used to move the robot as it localizes
+   */
   public static int ROTATION_SPEED = 75;
   private Odometer odometer;
   private float[] usData;
   private EV3LargeRegulatedMotor leftMotor, rightMotor;
   private SampleProvider usDistance;
 
-
-
+  /**
+   * distance value to select appropriate readings from the ultrasonic sensor once it detects
+   * abnormally large values
+   */
   private double THRESHOLD = 22.00;// the value of d
+  /**
+   * distance value to select appropriate readings from the ultrasonic sensor once it detects
+   * abnormally small values
+   */
   private double MARGIN = 2.00;// the value of k
   private double alpha, beta, theta;// the angle recorded when the sensor detects the wall
   private double angleToTurn;
@@ -151,7 +176,14 @@ public class UltrasonicLocalizer {
 
     theta = calculateTheta(alpha, beta) + risingAngle;
 
-    angleToTurn = theta + odometer.getXYT()[2];
+    if (Math.abs(alpha - beta) > 100) { // when the robot is not facing the wall, it will turn around
+      angleToTurn = theta + odometer.getXYT()[2] + risingAngle;
+    } else {// when the robot is  facing the wall
+      angleToTurn = theta + odometer.getXYT()[2];
+
+    }
+
+
 
     // rotate robot to theta = 0.0 using turning angle
     // introduce a fix error correction
@@ -234,4 +266,4 @@ public class UltrasonicLocalizer {
     return convertDistance(radius, Math.PI * width * angle / 360.0);
   }
 
-}
+}// end UltrasonicLocalizer
