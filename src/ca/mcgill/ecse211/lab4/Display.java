@@ -1,0 +1,95 @@
+/**
+ * This class implements Runnable. It is used
+ *  to display the content of the odometer 
+ *  variables, i.e. x,y and theta, on the LCD
+ *  screen of the EV3 brick.
+ *  
+ *  @author1 Cristian Ciungu
+ *  @author2 Hao Shu
+ *  @version 12-02-2019
+ *  
+ */
+
+package ca.mcgill.ecse211.lab4;
+
+import java.text.DecimalFormat;
+import ca.mcgill.ecse211.odometer.Odometer;
+import ca.mcgill.ecse211.odometer.OdometerExceptions;
+import lejos.hardware.lcd.TextLCD;
+
+public class Display implements Runnable {
+
+  private Odometer odo;
+  private TextLCD lcd;
+  private double[] position;
+  private final long DISPLAY_PERIOD = 25;
+  private long timeout = Long.MAX_VALUE;
+
+  /**
+   * This is the class constructor.
+   * 
+   * @param odoData
+   * @throws OdometerExceptions 
+   * 
+   */
+  
+  public Display(TextLCD lcd) throws OdometerExceptions {
+    odo = Odometer.getOdometer();
+    this.lcd = lcd;
+  }
+
+  /**
+   * This is the overloaded class constructor
+   * 
+   * @param odoData
+   * @throws OdometerExceptions 
+   * 
+   */
+  public Display(TextLCD lcd, long timeout) throws OdometerExceptions {
+    odo = Odometer.getOdometer();
+    this.timeout = timeout;
+    this.lcd = lcd;
+  }
+
+  /**
+   * This method initiates the LCD screen on the 
+   * EV3 brick. It then displays the robot's position
+   * (x,y,theta) on the screen. A timer is implemented 
+   * so that position updates are applied on a regular
+   * basis. 
+   * 
+   */
+  
+  public void run() {
+    
+    lcd.clear();
+    
+    long updateStart, updateEnd;
+    long tStart = System.currentTimeMillis();
+    do {
+      updateStart = System.currentTimeMillis();
+
+      // Retrieve x, y and Theta information
+      position = odo.getXYT();
+      
+      // Print x,y, and theta information
+      DecimalFormat numberFormat = new DecimalFormat("######0.00");
+      lcd.drawString("X: " + numberFormat.format(position[0]), 0, 0);
+      lcd.drawString("Y: " + numberFormat.format(position[1]), 0, 1);
+      lcd.drawString("T: " + numberFormat.format(position[2]), 0, 2);
+//      lcd.drawString("distance: " + Navigation_ObstacleAvoidance.dist, 0, 3);
+      
+      // this ensures that the data is updated only once every period
+      updateEnd = System.currentTimeMillis();
+      if (updateEnd - updateStart < DISPLAY_PERIOD) {
+        try {
+          Thread.sleep(DISPLAY_PERIOD - (updateEnd - updateStart));
+        } catch (InterruptedException e) {
+          e.printStackTrace();
+        }
+      }
+    } while ((updateEnd - tStart) <= timeout);
+
+  }
+
+} // end Display
