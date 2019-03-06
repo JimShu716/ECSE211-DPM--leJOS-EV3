@@ -1,4 +1,18 @@
 
+package ca.mcgill.ecse211.lab4;
+
+import lejos.hardware.Button;
+import lejos.hardware.ev3.LocalEV3;
+import lejos.hardware.lcd.TextLCD;
+import lejos.hardware.motor.EV3LargeRegulatedMotor;
+import lejos.hardware.port.Port;
+import lejos.hardware.sensor.EV3ColorSensor;
+import lejos.hardware.sensor.EV3UltrasonicSensor;
+import lejos.hardware.sensor.SensorModes;
+import lejos.robotics.SampleProvider;
+import ca.mcgill.ecse211.odometer.Odometer;
+import ca.mcgill.ecse211.odometer.OdometerExceptions;
+
 /**
  * This class contains the main method which implements the hardware required to execute the fourth
  * laboratory. The purpose of laboratory 4 is to localize the robot given an arbitrary starting
@@ -9,98 +23,116 @@
  * heading. Then, upon the user's prompt, the LightLocalizer class is implemented to drive the robot
  * to the origin of the grid system.
  * 
- * @author1 Cristian Ciungu
- * @author2 Hao Shu
+ * @author Cristian Ciungu
+ * @author Hao Shu
  * @version 12-02-2019
  * 
  */
-package ca.mcgill.ecse211.lab4;
-
-import lejos.hardware.Button;
-import lejos.hardware.ev3.LocalEV3;
-import lejos.hardware.lcd.TextLCD;
-import lejos.hardware.motor.EV3LargeRegulatedMotor;
-import lejos.hardware.port.Port;
-import lejos.hardware.sensor.EV3UltrasonicSensor;
-import lejos.hardware.sensor.SensorModes;
-import lejos.robotics.SampleProvider;
-import ca.mcgill.ecse211.odometer.Odometer;
-import ca.mcgill.ecse211.odometer.OdometerExceptions;
-
-
-
 public class Lab4 {
 
-  // Motor Objects, and Robot related parameters
-  private static final EV3LargeRegulatedMotor leftMotor =
+  /**
+   * The left motor.
+   */
+  public static final EV3LargeRegulatedMotor LEFT_MOTOR =
       new EV3LargeRegulatedMotor(LocalEV3.get().getPort("A"));
-  private static final EV3LargeRegulatedMotor rightMotor =
+  
+  /**
+   * The right motor.
+   */
+  public static final EV3LargeRegulatedMotor RIGHT_MOTOR =
       new EV3LargeRegulatedMotor(LocalEV3.get().getPort("B"));
-  private static final TextLCD lcd = LocalEV3.get().getTextLCD();
-  private static final Port usPort = LocalEV3.get().getPort("S1");
+  
+  /**
+   * The LCD screen.
+   */
+  public static final TextLCD LCD = LocalEV3.get().getTextLCD();
+  
+  /**
+   * The ultrasonic port.
+   */
+  public static final Port US_PORT = LocalEV3.get().getPort("S1");
+  
+  /**
+   * The ultrasonic sensor.
+   */
+  public static final SensorModes US_SENSOR = new EV3UltrasonicSensor(US_PORT);
+  
+  /**
+   * Fetches samples from the ultrasonic sensor.
+   */
+  public static SampleProvider usDistance = US_SENSOR.getMode("Distance");
+  
+  /**
+   * The color sensor.
+   */
+  public static final EV3ColorSensor COLOR_SENSOR =
+      new EV3ColorSensor(LocalEV3.get().getPort("S2"));
 
-  // Robot related parameters
-  public static final double WHEEL_RAD = 2.2;// the radius of the wheel
-  public static final double TRACK = 10.6;// the axel track of the robot
+  /**
+   * The radius of the wheel.
+   */
+  public static final double WHEEL_RAD = 2.2;
+  
+  /**
+   * The axle track of the robot.
+   */
+  public static final double TRACK = 10.6;
+  
+  /**
+   * The speed for the robot to go forward.
+   */
+  public final static int FORWARD_SPEED = 80;
+  
+  /**
+   * Speed used to move the robot as it localizes.
+   */
+  public static final int ROTATION_SPEED = 75;
+  
+  /**
+   * The odometer.
+   */
+  public static Odometer odometer;
 
+  /**
+   * Lab 4 main entry point.
+   * 
+   * @param args
+   * @throws OdometerExceptions
+   */
   public static void main(String[] args) throws OdometerExceptions {
-
     int buttonChoice;
 
     // Odometer related objects
-    Odometer odometer = Odometer.getOdometer(leftMotor, rightMotor, TRACK, WHEEL_RAD);
+    odometer = Odometer.getOdometer(LEFT_MOTOR, RIGHT_MOTOR, TRACK, WHEEL_RAD);
+    
     // initialize the display
-    Display odometryDisplay = new Display(lcd);
-
-    @SuppressWarnings("resource") // Because we don't bother to close this resource
-    // Instance ultrasonicsensor
-    SensorModes ultrasonicSensor = new EV3UltrasonicSensor(usPort);
-    // usDistance fetch samples from this instance
-    SampleProvider usDistance = ultrasonicSensor.getMode("Distance");
-
-    UltrasonicLocalizer usLocalizer =
-        new UltrasonicLocalizer(odometer, leftMotor, rightMotor, usDistance);
-    LightLocalizer lsLocalizer = new LightLocalizer(odometer, leftMotor, rightMotor);
-
+    Display odometryDisplay = new Display(LCD);
 
     do {
       // clear display
-      lcd.clear();
+      LCD.clear();
 
       // ask the user whether the motors should use rising or falling edge
-      lcd.drawString("< Left | Right >", 0, 0);
-      lcd.drawString("       |        ", 0, 1);
-      lcd.drawString("Rising |Falling ", 0, 2);
-      lcd.drawString(" Edge  |  Edge  ", 0, 3);
-      lcd.drawString("       |        ", 0, 4);
+      LCD.drawString("< Left | Right >", 0, 0);
+      LCD.drawString("       |        ", 0, 1);
+      LCD.drawString("Rising |Falling ", 0, 2);
+      LCD.drawString(" Edge  |  Edge  ", 0, 3);
+      LCD.drawString("       |        ", 0, 4);
 
       buttonChoice = Button.waitForAnyPress();
     } while (buttonChoice != Button.ID_LEFT && buttonChoice != Button.ID_RIGHT);
-
-    if (buttonChoice == Button.ID_LEFT) {// when the user choose rising edge
-
-      Thread odoThread = new Thread(odometer);
-      odoThread.start();
-      Thread odoDisplayThread = new Thread(odometryDisplay);
-      odoDisplayThread.start();
-
-      Thread lightThread = new Thread(lsLocalizer);
-      usLocalizer.risingEdge();// use rising edge
-      buttonChoice = Button.waitForAnyPress();// start the light localizer after pressing the button
-      lightThread.start();
-
+      
+    new Thread(odometer).start();
+    new Thread(odometryDisplay).start();
+    
+    if (buttonChoice == Button.ID_LEFT) { // when the user chooses rising edge
+      UltrasonicLocalizer.risingEdge(); 
     } else {
-
-      Thread odoThread = new Thread(odometer);
-      odoThread.start();
-      Thread odoDisplayThread = new Thread(odometryDisplay);
-      odoDisplayThread.start();
-
-      usLocalizer.fallingEdge();// use falling edge
-      buttonChoice = Button.waitForAnyPress();
-      lsLocalizer.run();
-
+      UltrasonicLocalizer.fallingEdge();
     }
+    
+    buttonChoice = Button.waitForAnyPress(); // start the light localizer after pressing the button
+    LightLocalizer.localize();
 
     while (Button.waitForAnyPress() != Button.ID_ESCAPE);
     System.exit(0);// exit the program after pressing the escape button
